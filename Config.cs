@@ -9,7 +9,7 @@
 
 		public string ErrorLogFile
 		{
-			get;set;
+			get; set;
 		} = @"D:\Cache\FeckdoorError.log";
 
 		public int ClipboardSpyDelay
@@ -31,5 +31,10 @@
 		{
 			get; set;
 		} = "Unknown executable";
+
+		public string RegistryAutorunName
+		{
+			get; set;
+		} = "Feckdoor";
 	}
 }
