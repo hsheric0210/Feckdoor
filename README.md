@@ -1,2 +1,2 @@
 # Feckdoor
- A educational backdoor
+ An experimental and educational keylogger
