@@ -11,5 +11,25 @@
 		{
 			get;set;
 		} = @"D:\Cache\FeckdoorError.log";
+
+		public int ClipboardSpyDelay
+		{
+			get; set;
+		} = 200;
+
+		public int TimestampDelay
+		{
+			get; set;
+		} = 5000;
+
+		public string FallbackWindowName
+		{
+			get; set;
+		} = "Unknown window";
+
+		public string FallbackWindowExecutableName
+		{
+			get; set;
+		} = "Unknown executable";
 	}
 }

