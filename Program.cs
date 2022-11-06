@@ -37,7 +37,15 @@ namespace Feckdoor
 				if (LoadConfig(args))
 					return;
 
-				Log.Logger = new LoggerConfiguration().MinimumLevel.Debug().WriteTo.File(Config.TheConfig.ProgramLogFile, fileSizeLimitBytes: 8388608, encoding: Encoding.UTF8, rollOnFileSizeLimit: true).CreateLogger();
+				try
+				{
+					Log.Logger = new LoggerConfiguration().MinimumLevel.Debug().WriteTo.File(Config.TheConfig.ProgramLogFile, outputTemplate: Config.TheConfig.LogTemplate, buffered: true, flushToDiskInterval: TimeSpan.FromSeconds(1), fileSizeLimitBytes: 8388608, encoding: Encoding.UTF8, rollOnFileSizeLimit: true).CreateLogger();
+				}
+				catch (Exception e)
+				{
+					MessageBox.Show($"Exception during logger initialization.{Environment.NewLine}{e}", "Startup failure", MessageBoxButtons.OK, MessageBoxIcon.Error);
+					return;
+				}
 				Log.Information("Hello, world!");
 
 				var generatedCfg = (from arg in args where arg.StartsWith("-gencfg", StringComparison.OrdinalIgnoreCase) select arg.Skip(7 /* "-gencfg".Length */)).FirstOrDefault();
@@ -178,7 +186,7 @@ namespace Feckdoor
 			}
 			catch (Exception e)
 			{
-				Log.Warning(e, "Exception during writing autorun entry to registry");
+				Log.Warning(e, "Exception during writing autorun entry to registry.");
 			}
 
 			return false;

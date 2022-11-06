@@ -41,7 +41,7 @@ namespace Feckdoor.InputLog
 			}
 		}
 
-		public override object[] DbMessage => new object[] { KeyString, Args.VkCode, Args.ScanCode, Args.ModifierKeys };
+		public override object[] DbMessage => new object[] { KeyString, Args.VkCode, Args.ScanCode, Args.Modifier };
 
 		public KeyLogEntry(DateTime timeStamp, KeyboardInputEventArgs args, string key) : base(timeStamp)
 		{

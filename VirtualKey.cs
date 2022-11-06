@@ -1,15 +1,14 @@
 ﻿
 // From fabriciorissetto/KeystrokeAPI
 // https://github.com/fabriciorissetto/KeystrokeAPI/blob/master/Keystroke.API/Entities/KeyCode.cs
-using System.Collections.Immutable;
 
 namespace Feckdoor
 {
-	internal static class VkCodeHelper
+	internal static class VkHelper
 	{
-		public static bool GetVkName(this VkCode vkCode, bool shift, ref string prevName)
+		public static bool GetVkName(this VirtualKey vkCode, ModifierKey modifier, ref string prevName)
 		{
-			var mem = typeof(VkCode).GetMember(vkCode.ToString())?.FirstOrDefault();
+			var mem = typeof(VirtualKey).GetMember(vkCode.ToString())?.FirstOrDefault();
 
 			bool excluded = mem?.GetCustomAttributes(typeof(VkNameExcludedAttribute), false).Length > 0;
 			if (excluded)
@@ -18,7 +17,7 @@ namespace Feckdoor
 			var attr = mem?.GetCustomAttributes(typeof(VkNameAttribute), false)?.FirstOrDefault();
 			var shiftAttr = mem?.GetCustomAttributes(typeof(VkShiftNameAttribute), false)?.FirstOrDefault();
 
-			if (shift && shiftAttr != null)
+			if (modifier.HasFlag(ModifierKey.Shift) && shiftAttr != null)
 			{
 				prevName = ((VkShiftNameAttribute)shiftAttr).Name;
 				return true;
@@ -30,7 +29,7 @@ namespace Feckdoor
 				return true;
 			}
 
-			if (prevName.Length > 1 && prevName.Length <= vkCode.ToString().Length)
+			if (modifier.HasFlag(ModifierKey.Ctrl) && vkCode >= VirtualKey.A && vkCode <= VirtualKey.Z || prevName.Length > 1 && prevName.Length <= vkCode.ToString().Length)
 			{
 				prevName = vkCode.ToString();
 				return true;
@@ -73,16 +72,7 @@ namespace Feckdoor
 	{
 	}
 
-	public static class ModifierVkCode
-	{
-		public static IReadOnlyCollection<VkCode> CtrlKey { get; } = ImmutableList.Create(VkCode.Control, VkCode.ControlKey, VkCode.LControlKey, VkCode.RControlKey);
-		public static IReadOnlyCollection<VkCode> ShiftKey { get; } = ImmutableList.Create(VkCode.Shift, VkCode.ShiftKey, VkCode.LShiftKey, VkCode.RShiftKey);
-		public static IReadOnlyCollection<VkCode> WinKey { get; } = ImmutableList.Create(VkCode.LWin, VkCode.RWin);
-
-		public static bool AnyVkMatch(this IReadOnlyCollection<VkCode> collection) => collection.Any(code => (User32.GetAsyncKeyState((int)code) & 1) != 0);
-	}
-
-	public enum VkCode
+	public enum VirtualKey
 	{
 		None = 0,
 		[VkName("LMB")]

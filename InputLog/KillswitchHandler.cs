@@ -6,7 +6,7 @@ namespace Feckdoor.InputLog
 {
 	public class KillswitchHandler : IDisposable
 	{
-		private readonly IEnumerable<VkCode> KillswitchBinding;
+		private readonly IEnumerable<VirtualKey> KillswitchBinding;
 		private bool disposed;
 
 		public KillswitchHandler()
@@ -16,11 +16,12 @@ namespace Feckdoor.InputLog
 			{
 				try
 				{
-					return (VkCode)int.Parse(vkCodeHex);
+					return (VirtualKey)int.Parse(vkCodeHex);
 				}
 				catch (Exception e)
 				{
-					return VkCode.None;
+					Log.Warning(e, "Exception during parsing Killswitch key code.");
+					return VirtualKey.None;
 				}
 			});
 		}

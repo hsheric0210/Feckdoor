@@ -12,10 +12,15 @@ You may generate the configuration file by running the program with ```gencfg```
 * [InputLog](#InputLog)
   * [LogMode](#LogMode)
   * [InputLogFile](#InputLogFile)
-  * [PreserveCase](#PreserveCase)
+  * [ShiftPrefix](#ShiftPrefix)
+  * [SuppressModifierKey](#SuppressModifierKey)
+  * [AutoCapitalize](#AutoCapitalize)
   * [ClipboardSpyDelay](#ClipboardSpyDelay)
   * [FallbackWindowName](#FallbackWindowName)
   * [FallbackWindowExecutableName](#FallbackWindowExecutableName)
+  * [SaveWait](#SaveWait)
+  * [SaveMaxUndone](#SaveMaxUndone)
+  * [SaveDelay](#SaveDelay)
   * [PlainText](#PlainText)
     * [TimestampFormat](#TimestampFormat)
     * [TimestampDelay](#TimestampDelay)
@@ -29,6 +34,10 @@ You may generate the configuration file by running the program with ```gencfg```
 > For example:
 > Format ```'InputLog.{0:dddd-dd-MMMM-yyyy_HH-mm-ss}.{1}.log'``` will produce log file named like ```'InputLog.Friday-29-May-2015_05-50-06.1.log'```
 > For further information, see [here](https://learn.microsoft.com/en-us/dotnet/standard/base-types/custom-date-and-time-format-strings)
+
+### LogTemplate
+* Serilog log record template
+* See [Serilog wiki](https://github.com/serilog/serilog/wiki/Writing-Log-Events) and [MessageTemplates.org](https://messagetemplates.org/)
 
 ### RegistryAutorunName
 * You can specify the name of the registry autorun entry
@@ -66,9 +75,21 @@ You may generate the configuration file by running the program with ```gencfg```
 > Format ```'InputLog.{0:dddd-dd-MMMM-yyyy_HH-mm-ss}.{1}.log'``` will produce log file named like ```'InputLog.Friday-29-May-2015_05-50-06.1.log'```
 > For further information, see [here](https://learn.microsoft.com/en-us/dotnet/standard/base-types/custom-date-and-time-format-strings)
 
-### PreserveCase
-* Disable the case auto-switcher feature
-* By default, Feckdoor automatically detects ```Shift``` or ```CapsLock``` pressed and capitalize/decapitalize the input character.
+### ShiftPrefix
+* Enable shift prefixing with ```'+'```
+* If enabled, characters entered with shift key pressed will displayed as ```'+'``` prefixed.
+
+> For example:
+> If this option is enabled, Entering ```'ABCD'``` will log ```'[+A][+B][+C][+D]'``` instead of ```'ABCD'```
+
+### SuppressModifierKey
+* Block modifier keys (Ctrl, Shift, Alt, Win) from being logged
+
+> For example:
+> If this option is enabled, Entering ```'AbCd'``` will log ```'AbCd'``` instead of ```'[SHIFT]Ab[SHIFT]Cd'```
+
+### AutoCapitalize
+* Automatically capitalize characters which entered with CapsLock enabled or Shift key pressed
 
 ### ClipboardSpyDelay
 * Delay between the clipboard spy sniffs the clipboard, in milliseconds.
@@ -78,6 +99,15 @@ You may generate the configuration file by running the program with ```gencfg```
 
 ### FallbackWindowExecutableName
 * The default window executable path when Active Window Capture feature fails to capture the active window.
+
+### SaveWait
+* The delay to detect short AFK (Delay after the last character input), in milliseconds.
+
+### SaveMaxUndone
+* The dead-line of undone log records to delay writing.
+
+### SaveDelay
+* The wait tick before next loop of log file save worker, in milliseconds.
 
 ### PlainText
 > Options in this group only available when LogMode PlainText selected
