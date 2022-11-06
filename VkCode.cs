@@ -1,11 +1,13 @@
 ﻿
 // From fabriciorissetto/KeystrokeAPI
 // https://github.com/fabriciorissetto/KeystrokeAPI/blob/master/Keystroke.API/Entities/KeyCode.cs
+using System.Collections.Immutable;
+
 namespace Feckdoor
 {
 	internal static class VkCodeHelper
 	{
-		internal static bool GetVkName(this VkCode vkCode, bool shift, ref string prevName)
+		public static bool GetVkName(this VkCode vkCode, bool shift, ref string prevName)
 		{
 			var mem = typeof(VkCode).GetMember(vkCode.ToString())?.FirstOrDefault();
 
@@ -28,7 +30,7 @@ namespace Feckdoor
 				return true;
 			}
 
-			if (prevName.Length > 2 && prevName.Length <= vkCode.ToString().Length)
+			if (prevName.Length > 1 && prevName.Length <= vkCode.ToString().Length)
 			{
 				prevName = vkCode.ToString();
 				return true;
@@ -71,7 +73,16 @@ namespace Feckdoor
 	{
 	}
 
-	internal enum VkCode
+	public static class ModifierVkCode
+	{
+		public static IReadOnlyCollection<VkCode> CtrlKey { get; } = ImmutableList.Create(VkCode.Control, VkCode.ControlKey, VkCode.LControlKey, VkCode.RControlKey);
+		public static IReadOnlyCollection<VkCode> ShiftKey { get; } = ImmutableList.Create(VkCode.Shift, VkCode.ShiftKey, VkCode.LShiftKey, VkCode.RShiftKey);
+		public static IReadOnlyCollection<VkCode> WinKey { get; } = ImmutableList.Create(VkCode.LWin, VkCode.RWin);
+
+		public static bool AnyVkMatch(this IReadOnlyCollection<VkCode> collection) => collection.Any(code => (User32.GetAsyncKeyState((int)code) & 1) != 0);
+	}
+
+	public enum VkCode
 	{
 		None = 0,
 		[VkName("LMB")]
@@ -320,9 +331,9 @@ namespace Feckdoor
 		ProcessKey = 229,
 		Packet = 231,
 		Attn = 246,
-		Crsel = 247,
-		Exsel = 248,
-		EraseEof = 249,
+		CrSel = 247,
+		ExSel = 248,
+		EraseEOF = 249,
 		Play = 250,
 		Zoom = 251,
 		NoName = 252,
