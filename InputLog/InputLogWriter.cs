@@ -72,8 +72,9 @@ namespace Feckdoor.InputLog
 				{
 					RollingIndex++;
 					RollingRequested = true;
+
+					Log.Information("Input log rolling requested n={n} (size {sz} >= {limit}).", RollingIndex, size, Config.TheConfig.LogRollingSize);
 				}
-					Log.Information("Input log roll: {n} (size {sz} >= {limit}).", RollingIndex, size, Config.TheConfig.LogRollingSize);
 			}
 			catch (Exception e)
 			{

