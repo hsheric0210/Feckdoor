@@ -55,6 +55,13 @@ You may generate the configuration file by running the program with ```gencfg```
 > Setting it to ```'1B 20 23'``` will bind the Kill-switch to 'ESC + SPACE + END' key combo
 > The program will exit when you press these keybind simultaneously.
 
+### KillswitchTimer
+* The time given to you (or the victim) to press all killswitch binds
+* If the time overs, nothing happens.
+
+> For example:
+> Setting it to ```'100'``` and the Killswitch to ```'72 75 78'``` will only able to trigger the Killswitch if can you press ```F3```, ```F6```, ```F9``` within 100 milliseconds.
+
 ---
 
 ## InputLog

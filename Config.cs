@@ -28,6 +28,11 @@
 			get; set;
 		} = "70 71 72 73 78 79 7A 7B";
 
+		public int KillswitchTimer
+		{
+			get; set;
+		} = 200;
+
 		public InputLogSection InputLog
 		{
 			get; set;

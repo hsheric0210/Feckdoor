@@ -149,6 +149,7 @@ namespace Feckdoor
 				disposed = true;
 				Log.Information("Resource disposal fininshed. Bye!");
 				Application.Exit();
+				Log.CloseAndFlush();
 			}
 			catch (Exception e)
 			{
