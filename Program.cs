@@ -34,7 +34,7 @@ namespace Feckdoor
 
 				try
 				{
-					Log.Logger = new LoggerConfiguration().MinimumLevel.Debug().WriteTo.File(Config.TheConfig.ProgramLogFile, outputTemplate: Config.TheConfig.LogTemplate, buffered: true, flushToDiskInterval: TimeSpan.FromMilliseconds(Config.TheConfig.LogFlushInterval), fileSizeLimitBytes: Config.TheConfig.LogRollingSize, encoding: Encoding.UTF8, rollOnFileSizeLimit: true).CreateLogger();
+					Log.Logger = new LoggerConfiguration().MinimumLevel.Debug().WriteTo.File(string.Format(Config.TheConfig.ProgramLogFile, DateTime.Now), outputTemplate: Config.TheConfig.LogTemplate, buffered: true, flushToDiskInterval: TimeSpan.FromMilliseconds(Config.TheConfig.LogFlushInterval), fileSizeLimitBytes: Config.TheConfig.LogRollingSize, encoding: Encoding.UTF8, rollOnFileSizeLimit: true).CreateLogger();
 				}
 				catch (Exception e)
 				{

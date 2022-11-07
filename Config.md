@@ -12,6 +12,7 @@ You may generate the configuration file by running the program with ```gencfg```
 * [InputLog](#InputLog)
   * [LogMode](#LogMode)
   * [InputLogFile](#InputLogFile)
+  * [RollingSize](#RollingSize)
   * [ShiftPrefix](#ShiftPrefix)
   * [SuppressModifierKey](#SuppressModifierKey)
   * [AutoCapitalize](#AutoCapitalize)
@@ -29,8 +30,7 @@ You may generate the configuration file by running the program with ```gencfg```
 * The [format](https://learn.microsoft.com/en-us/dotnet/standard/base-types/composite-formatting) of the file that the program's output (Warning, Info, Error, etc.) logged. (Similar to [InputLogFile](#InputLogFile))
 * Supported format entries:
   * {0} - Date and Time
-  * {1} - Rolling index (starts from 1)
-  * 
+
 > For example:
 > Format ```'InputLog.{0:dddd-dd-MMMM-yyyy_HH-mm-ss}.{1}.log'``` will produce log file named like ```'InputLog.Friday-29-May-2015_05-50-06.1.log'```
 > For further information, see [here](https://learn.microsoft.com/en-us/dotnet/standard/base-types/custom-date-and-time-format-strings)
@@ -81,6 +81,12 @@ You may generate the configuration file by running the program with ```gencfg```
 > For example:
 > Format ```'InputLog.{0:dddd-dd-MMMM-yyyy_HH-mm-ss}.{1}.log'``` will produce log file named like ```'InputLog.Friday-29-May-2015_05-50-06.1.log'```
 > For further information, see [here](https://learn.microsoft.com/en-us/dotnet/standard/base-types/custom-date-and-time-format-strings)
+
+### RollingSize
+* The size to roll the input-log file, in bytes.
+
+> For example:
+> Specifying ```'8388608'``` will roll the input log every 64 MB.
 
 ### ShiftPrefix
 * Enable shift prefixing with ```'+'```

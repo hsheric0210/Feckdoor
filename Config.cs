@@ -11,7 +11,7 @@
 		public string ProgramLogFile
 		{
 			get; set;
-		} = @".\{0}.{1}.log";
+		} = @".\{0:yyyyMMdd}.log";
 
 		public string LogTemplate
 		{
@@ -59,7 +59,12 @@
 		public string InputLogFile
 		{
 			get; set;
-		} = @".\InputLog{0}.{1}.log";
+		} = @".\InputLog.{0:yyyyMMdd}.{1}.log";
+
+		public int RollingSize
+		{
+			get; set;
+		} = 8388608;
 
 		public bool ShiftPrefix
 		{
@@ -95,12 +100,12 @@
 		{
 			get; set;
 		} = 2000;
-		
+
 		public int SaveMaxUndone
 		{
 			get; set;
 		} = 20;
-		
+
 		public int SaveDelay
 		{
 			get; set;

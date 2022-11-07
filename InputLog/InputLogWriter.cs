@@ -11,6 +11,9 @@ namespace Feckdoor.InputLog
 		private static volatile bool InputWriterRunning = true;
 		private static Task WriterTask = null!;
 
+		private static int RollingIndex = 1;
+		private static bool RollingRequested = false;
+
 		public static void Initialize()
 		{
 			WriterTask = Task.Run(async () =>
@@ -28,17 +31,29 @@ namespace Feckdoor.InputLog
 			});
 		}
 
-		private static void WriteUndone(string inputLogFile)
+		private static void WriteUndone(string format)
 		{
-			Log.Debug("Writing input log.");
+			string inputLogFile = string.Format(format, DateTime.Now, RollingIndex);
+
+			// If already exists
+			if (RollingRequested)
+			{
+				// Check if new file is already exists
+				while (new FileInfo(inputLogFile).Exists)
+				{
+					inputLogFile = string.Format(format, DateTime.Now, ++RollingIndex);
+				}
+				RollingRequested = false;
+			}
+
+			Log.Debug("Writing input log to {file}.", inputLogFile);
 
 			try
 			{
 				var queueCopy = new List<InputLogEntry>(UndoneQueue);
 				UndoneQueue.Clear();
 
-				// current sqlite db is not supported
-
+				// todo: sqlite db support
 				using var writer = new StreamWriter(inputLogFile, true, Encoding.UTF8);
 				foreach (var entry in queueCopy)
 				{
@@ -51,6 +66,14 @@ namespace Feckdoor.InputLog
 						Log.Warning(e, "Exception during writing a input log entry.");
 					}
 				}
+
+				long size = new FileInfo(inputLogFile).Length;
+				if (size >= Config.TheConfig.InputLog.RollingSize)
+				{
+					RollingIndex++;
+					RollingRequested = true;
+				}
+					Log.Information("Input log roll: {n} (size {sz} >= {limit}).", RollingIndex, size, Config.TheConfig.LogRollingSize);
 			}
 			catch (Exception e)
 			{
