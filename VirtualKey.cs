@@ -6,26 +6,73 @@ namespace Feckdoor
 {
 	internal static class VkHelper
 	{
+		private static readonly IDictionary<VirtualKey, bool> ExcludedCache = new Dictionary<VirtualKey, bool>();
+		private static readonly IDictionary<VirtualKey, string?> NameCache = new Dictionary<VirtualKey, string?>();
+		private static readonly IDictionary<VirtualKey, string?> ShiftNameCache = new Dictionary<VirtualKey, string?>();
+		private static readonly IDictionary<VirtualKey, ModifierKey> ModifierCache = new Dictionary<VirtualKey, ModifierKey>();
+
+		private static bool IsExcluded(this VirtualKey vkCode)
+		{
+			if (ExcludedCache.TryGetValue(vkCode, out bool excluded))
+				return excluded;
+
+			excluded = typeof(VirtualKey).GetMember(vkCode.ToString())?.FirstOrDefault()?.GetCustomAttributes(typeof(VkNameExcludedAttribute), false).Length > 0;
+			ExcludedCache.Add(vkCode, excluded);
+			return excluded;
+		}
+
+		private static string? GetName(this VirtualKey vkCode)
+		{
+			if (NameCache.TryGetValue(vkCode, out string? name))
+				return name;
+
+			var attr = typeof(VirtualKey).GetMember(vkCode.ToString())?.FirstOrDefault()?.GetCustomAttributes(typeof(VkNameAttribute), false)?.FirstOrDefault();
+			if (attr != null)
+				name = ((VkNameAttribute)attr).Name;
+			NameCache.Add(vkCode, name);
+			return name;
+		}
+
+		private static string? GetShiftedName(this VirtualKey vkCode)
+		{
+			if (ShiftNameCache.TryGetValue(vkCode, out string? name))
+				return name;
+
+			var attr = typeof(VirtualKey).GetMember(vkCode.ToString())?.FirstOrDefault()?.GetCustomAttributes(typeof(VkShiftNameAttribute), false)?.FirstOrDefault();
+			if (attr != null)
+				name = ((VkShiftNameAttribute)attr).Name;
+			ShiftNameCache.Add(vkCode, name);
+			return name;
+		}
+
+		public static ModifierKey? GetModifier(this VirtualKey vkCode)
+		{
+			if (ModifierCache.TryGetValue(vkCode, out ModifierKey modifier))
+				return modifier;
+
+			var attr = typeof(VirtualKey).GetMember(vkCode.ToString())?.FirstOrDefault()?.GetCustomAttributes(typeof(VkModifier), false)?.FirstOrDefault();
+			if (attr != null)
+				modifier = ((VkModifier)attr).ModifierKey;
+			ModifierCache.Add(vkCode, modifier);
+			return modifier;
+		}
+
 		public static bool GetVkName(this VirtualKey vkCode, ModifierKey modifier, ref string prevName)
 		{
-			var mem = typeof(VirtualKey).GetMember(vkCode.ToString())?.FirstOrDefault();
-
-			bool excluded = mem?.GetCustomAttributes(typeof(VkNameExcludedAttribute), false).Length > 0;
-			if (excluded)
+			if (vkCode.IsExcluded())
 				return false;
 
-			var attr = mem?.GetCustomAttributes(typeof(VkNameAttribute), false)?.FirstOrDefault();
-			var shiftAttr = mem?.GetCustomAttributes(typeof(VkShiftNameAttribute), false)?.FirstOrDefault();
-
-			if (modifier.HasFlag(ModifierKey.Shift) && shiftAttr != null)
+			string? shifted = vkCode.GetShiftedName();
+			if (modifier.HasFlag(ModifierKey.Shift) && shifted != null)
 			{
-				prevName = ((VkShiftNameAttribute)shiftAttr).Name;
+				prevName = shifted;
 				return true;
 			}
 
-			if (attr != null)
+			string? name = vkCode.GetName();
+			if (name != null)
 			{
-				prevName = ((VkNameAttribute)attr).Name;
+				prevName = name;
 				return true;
 			}
 
@@ -50,6 +97,20 @@ namespace Feckdoor
 		public VkNameAttribute(string name)
 		{
 			Name = name;
+		}
+	}
+
+	[AttributeUsage(AttributeTargets.Field)]
+	internal class VkModifier : Attribute
+	{
+		public ModifierKey ModifierKey
+		{
+			get;
+		}
+
+		public VkModifier(ModifierKey modifier)
+		{
+			ModifierKey = modifier;
 		}
 	}
 
@@ -91,9 +152,12 @@ namespace Feckdoor
 		Clear = 12,
 		Enter = 13,
 		[VkName("SHIFT")]
+		[VkModifier(ModifierKey.Shift)]
 		ShiftKey = 16,
 		[VkName("CTRL")]
+		[VkModifier(ModifierKey.Ctrl)]
 		ControlKey = 17,
+		[VkModifier(ModifierKey.Alt)]
 		[VkName("ALT")]
 		Menu = 18,
 		Pause = 19,
@@ -183,8 +247,10 @@ namespace Feckdoor
 		Y = 89,
 		Z = 90,
 		[VkName("WIN")]
+		[VkModifier(ModifierKey.Win)]
 		LWin = 91,
 		[VkName("WIN")]
+		[VkModifier(ModifierKey.Win)]
 		RWin = 92,
 		Apps = 93,
 		Sleep = 95,
@@ -248,16 +314,22 @@ namespace Feckdoor
 		[VkName("SCRLK")]
 		Scroll = 145,
 		[VkName("SHIFT")]
+		[VkModifier(ModifierKey.Shift)]
 		LShiftKey = 160,
 		[VkName("SHIFT")]
+		[VkModifier(ModifierKey.Shift)]
 		RShiftKey = 161,
 		[VkName("CTRL")]
+		[VkModifier(ModifierKey.Ctrl)]
 		LControlKey = 162,
 		[VkName("CTRL")]
+		[VkModifier(ModifierKey.Ctrl)]
 		RControlKey = 163,
 		[VkName("ALT")]
+		[VkModifier(ModifierKey.Alt)]
 		LMenu = 164,
 		[VkName("ALT")]
+		[VkModifier(ModifierKey.Alt)]
 		RMenu = 165,
 		BrowserBack = 166,
 		BrowserForward = 167,
@@ -328,14 +400,6 @@ namespace Feckdoor
 		Zoom = 251,
 		NoName = 252,
 		Pa1 = 253,
-		OemClear = 254,
-		KeyCode = 65535,
-		[VkName("SHIFT")]
-		Shift = 65536,
-		[VkName("CTRL")]
-		Control = 131072,
-		[VkName("ALT")]
-		Alt = 262144,
-		Modifiers = -65536
+		OemClear = 254
 	}
 }

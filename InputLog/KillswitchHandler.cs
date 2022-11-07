@@ -1,7 +1,6 @@
 ﻿using Serilog;
 using System.Diagnostics;
 using System.Globalization;
-using System.Text;
 
 namespace Feckdoor.InputLog
 {
