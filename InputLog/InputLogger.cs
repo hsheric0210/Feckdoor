@@ -8,7 +8,7 @@ namespace Feckdoor.InputLog
 	{
 		private static ActiveWindowInfo ActiveWindowInfoCache;
 
-		private readonly Queue<InputLogEntry> UndoneQueue = new();
+		internal static readonly Queue<InputLogEntry> UndoneQueue = new();
 		private readonly Stopwatch PreviousInput = new();
 
 		private readonly Task WriterTask;

