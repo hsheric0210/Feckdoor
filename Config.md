@@ -25,9 +25,16 @@ You may generate the configuration file by running the program with ```gencfg```
   * [PlainText](#PlainText)
     * [TimestampFormat](#TimestampFormat)
     * [TimestampDelay](#TimestampDelay)
+* [ScreenCapture](#ScreenCapture)
+  * [FileNameFormat](#FileNameFormat)
+  * [ImageFormat](#ImageFormat)
+  * [CapturePeriod](#CapturePeriod)
+  * [RetainedCaptureCount](#RetainedCaptureCount)
 
 ### ProgramLogFile
 * The [format](https://learn.microsoft.com/en-us/dotnet/standard/base-types/composite-formatting) of the file that the program's output (Warning, Info, Error, etc.) logged. (Similar to [InputLogFile](#InputLogFile))
+* Path is included.
+  * It means you can set the custom log file path by providing absolute/relative location as ```'C:\\Log.{0:yyyy-MM-dd}.{1}.log'```
 * Supported format entries:
   * {0} - Date and Time
 * Leave this empty to fully disable logs.
@@ -72,10 +79,12 @@ You may generate the configuration file by running the program with ```gencfg```
 * You can choose which mode the logger uses
 * Available modes:
   * PlainText - Log to text file
-  * SQLite - Log to SQLite database
+
+> Currently only PlainText mode is available.
 
 ### InputLogFile
 * The format of the file that all of the user input (Keyboard, Clipboard, Active window change, etc.) logged.
+* Path is included.
 * Supported format entries:
   * {0} - Date and Time
   * {1} - Rolling index (starts from 1)
@@ -133,3 +142,28 @@ You may generate the configuration file by running the program with ```gencfg```
 #### TimestampDelay
 * Delay between the timestamp notification in input log file, in milliseconds.
 
+
+### ScreenCapture
+
+#### FileNameFormat
+* The screen capture file format (include path)
+* Path is included.
+* Supported format entries:
+  * {0} - Date and Time
+  * {1} - Screen index (starts from zero)
+
+> For example:
+> Format ```'Screen.{0:dddd-dd-MMMM-yyyy_HH-mm-ss}.{1}.png'``` will produce screen capture file named like ```'Screen.Friday-29-May-2015_05-50-06.1.png'```
+> For further information, see [here](https://learn.microsoft.com/en-us/dotnet/standard/base-types/custom-date-and-time-format-strings)
+
+#### ImageFormat
+* The capture image format
+* Only values in [here](https://learn.microsoft.com/en-us/dotnet/api/system.drawing.imaging.imageformat) available.
+  * Other values will raise the error and disables the screen capturer.
+
+#### CapturePeriod
+* As it named, the screen capturing period, in milliseconds.
+
+#### RetainedCaptureCount
+* If the screen capture count overs this value, the capture files will be sequentially removed in its creation order.
+* You can disable this by setting it to ```'-1'```, but it is highly discouraged.

