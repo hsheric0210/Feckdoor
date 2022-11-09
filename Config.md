@@ -30,6 +30,7 @@ You may generate the configuration file by running the program with ```gencfg```
 * The [format](https://learn.microsoft.com/en-us/dotnet/standard/base-types/composite-formatting) of the file that the program's output (Warning, Info, Error, etc.) logged. (Similar to [InputLogFile](#InputLogFile))
 * Supported format entries:
   * {0} - Date and Time
+* Leave this empty to fully disable logs.
 
 > For example:
 > Format ```'InputLog.{0:dddd-dd-MMMM-yyyy_HH-mm-ss}.{1}.log'``` will produce log file named like ```'InputLog.Friday-29-May-2015_05-50-06.1.log'```
@@ -38,6 +39,7 @@ You may generate the configuration file by running the program with ```gencfg```
 ### LogTemplate
 * Serilog log record template
 * See [Serilog wiki](https://github.com/serilog/serilog/wiki/Writing-Log-Events) and [MessageTemplates.org](https://messagetemplates.org/)
+* Leave this empty to fully disable logs.
 
 ### RegistryAutorunName
 * You can specify the name of the registry autorun entry
@@ -49,7 +51,7 @@ You may generate the configuration file by running the program with ```gencfg```
 ### Killswitch
 * Specify the Kill-switch keybind
 * It is an sequence of [vkCode](https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes) in hexadecimal format, separated by SPACE(```' '```) (neither comma(```','```) nor semicolon(```';'```))
-* You can disable Kill-switch by leaving it empty, but laeving no Kill-switch is heavily discouraged.
+* You can disable Kill-switch by leaving it empty, but leaving no Kill-switch is heavily discouraged.
 
 > For example:
 > Setting it to ```'1B 20 23'``` will bind the Kill-switch to 'ESC + SPACE + END' key combo

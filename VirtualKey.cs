@@ -6,67 +6,41 @@ namespace Feckdoor
 {
 	internal static class VkHelper
 	{
-		private static readonly IDictionary<VirtualKey, bool> ExcludedCache = new Dictionary<VirtualKey, bool>();
 		private static readonly IDictionary<VirtualKey, string?> NameCache = new Dictionary<VirtualKey, string?>();
 		private static readonly IDictionary<VirtualKey, string?> ShiftNameCache = new Dictionary<VirtualKey, string?>();
 		private static readonly IDictionary<VirtualKey, ModifierKey> ModifierCache = new Dictionary<VirtualKey, ModifierKey>();
 
-		private static bool IsExcluded(this VirtualKey vkCode)
+		private static V GetValueCached<K, V>(this VirtualKey vkCode, IDictionary<VirtualKey, V> cache, Func<K, V> getter, V? defaultValue = default)
 		{
-			if (ExcludedCache.TryGetValue(vkCode, out bool excluded))
-				return excluded;
+			if (cache.TryGetValue(vkCode, out V? value))
+				return value;
 
-			excluded = typeof(VirtualKey).GetMember(vkCode.ToString())?.FirstOrDefault()?.GetCustomAttributes(typeof(VkNameExcludedAttribute), false).Length > 0;
-			ExcludedCache.Add(vkCode, excluded);
-			return excluded;
-		}
-
-		private static string? GetName(this VirtualKey vkCode)
-		{
-			if (NameCache.TryGetValue(vkCode, out string? name))
-				return name;
-
-			var attr = typeof(VirtualKey).GetMember(vkCode.ToString())?.FirstOrDefault()?.GetCustomAttributes(typeof(VkNameAttribute), false)?.FirstOrDefault();
+			if (value == null)
+				value = defaultValue;
+			var attr = typeof(VirtualKey).GetMember(vkCode.ToString())?.FirstOrDefault()?.GetCustomAttributes(typeof(K), false)?.FirstOrDefault();
 			if (attr != null)
-				name = ((VkNameAttribute)attr).Name;
-			NameCache.Add(vkCode, name);
-			return name;
+				value = getter((K)attr);
+			cache.Add(vkCode, value);
+			return value;
 		}
 
-		private static string? GetShiftedName(this VirtualKey vkCode)
-		{
-			if (ShiftNameCache.TryGetValue(vkCode, out string? name))
-				return name;
 
-			var attr = typeof(VirtualKey).GetMember(vkCode.ToString())?.FirstOrDefault()?.GetCustomAttributes(typeof(VkShiftNameAttribute), false)?.FirstOrDefault();
-			if (attr != null)
-				name = ((VkShiftNameAttribute)attr).Name;
-			ShiftNameCache.Add(vkCode, name);
-			return name;
-		}
+		private static string? GetName(this VirtualKey vkCode) => GetValueCached<VkNameAttribute, string?>(vkCode, NameCache, (attr) => attr.Name);
 
-		public static ModifierKey? GetModifier(this VirtualKey vkCode)
-		{
-			if (ModifierCache.TryGetValue(vkCode, out ModifierKey modifier))
-				return modifier;
+		private static string? GetShiftedName(this VirtualKey vkCode) => GetValueCached<VkShiftNameAttribute, string?>(vkCode, ShiftNameCache, (attr) => attr.Name);
 
-			var attr = typeof(VirtualKey).GetMember(vkCode.ToString())?.FirstOrDefault()?.GetCustomAttributes(typeof(VkModifier), false)?.FirstOrDefault();
-			if (attr != null)
-				modifier = ((VkModifier)attr).ModifierKey;
-			ModifierCache.Add(vkCode, modifier);
-			return modifier;
-		}
+		public static ModifierKey? GetModifier(this VirtualKey vkCode) => GetValueCached<VkModifierAttribute, ModifierKey>(vkCode, ModifierCache, (attr) => attr.ModifierKey);
 
 		public static bool GetVkName(this VirtualKey vkCode, ModifierKey modifier, ref string prevName)
 		{
-			if (vkCode.IsExcluded())
-				return false;
-
-			string? shifted = vkCode.GetShiftedName();
-			if (modifier.HasFlag(ModifierKey.Shift) && shifted != null)
+			if (modifier.HasFlag(ModifierKey.Shift))
 			{
-				prevName = shifted;
-				return true;
+				string? shifted = vkCode.GetShiftedName();
+				if (shifted != null)
+				{
+					prevName = shifted;
+					return true;
+				}
 			}
 
 			string? name = vkCode.GetName();
@@ -76,7 +50,8 @@ namespace Feckdoor
 				return true;
 			}
 
-			if (modifier.HasFlag(ModifierKey.Ctrl) && vkCode >= VirtualKey.A && vkCode <= VirtualKey.Z || prevName.Length > 1 && prevName.Length <= vkCode.ToString().Length)
+			// Ctrl hotkeys -> weird characters
+			if (modifier.HasFlag(ModifierKey.Ctrl) && vkCode >= VirtualKey.A && vkCode <= VirtualKey.Z)
 			{
 				prevName = vkCode.ToString();
 				return true;
@@ -101,14 +76,14 @@ namespace Feckdoor
 	}
 
 	[AttributeUsage(AttributeTargets.Field)]
-	internal class VkModifier : Attribute
+	internal class VkModifierAttribute : Attribute
 	{
 		public ModifierKey ModifierKey
 		{
 			get;
 		}
 
-		public VkModifier(ModifierKey modifier)
+		public VkModifierAttribute(ModifierKey modifier)
 		{
 			ModifierKey = modifier;
 		}
@@ -126,11 +101,6 @@ namespace Feckdoor
 		{
 			Name = name;
 		}
-	}
-
-	[AttributeUsage(AttributeTargets.Field)]
-	internal class VkNameExcludedAttribute : Attribute
-	{
 	}
 
 	public enum VirtualKey
@@ -254,37 +224,26 @@ namespace Feckdoor
 		RWin = 92,
 		Apps = 93,
 		Sleep = 95,
-		[VkNameExcluded]
 		NumPad0 = 96,
-		[VkNameExcluded]
 		NumPad1 = 97,
-		[VkNameExcluded]
 		NumPad2 = 98,
-		[VkNameExcluded]
 		NumPad3 = 99,
-		[VkNameExcluded]
 		NumPad4 = 100,
-		[VkNameExcluded]
 		NumPad5 = 101,
-		[VkNameExcluded]
 		NumPad6 = 102,
-		[VkNameExcluded]
 		NumPad7 = 103,
-		[VkNameExcluded]
 		NumPad8 = 104,
-		[VkNameExcluded]
 		NumPad9 = 105,
-		[VkNameExcluded]
+		[VkName("*")]
 		Multiply = 106,
-		[VkNameExcluded]
+		[VkName("+")]
 		Add = 107,
-		[VkNameExcluded]
 		Separator = 108,
-		[VkNameExcluded]
+		[VkName("-")]
 		Subtract = 109,
-		[VkNameExcluded]
+		[VkName(".")]
 		Decimal = 110,
-		[VkNameExcluded]
+		[VkName("/")]
 		Divide = 111,
 		F1 = 112,
 		F2 = 113,
