@@ -44,8 +44,17 @@ namespace Feckdoor.InputLog
 						var enumerationSorted = enumeration.OrderBy(file => new FileInfo(file).LastWriteTime).ToList();
 						for (int i = 0; i < deleted; i++)
 						{
-							File.Delete(enumerationSorted[i]);
-							Log.Debug("Deleted old screen capture file {file}.", enumerationSorted[i]);
+							string file = enumerationSorted[i];
+							try
+							{
+								File.Delete(file);
+								Log.Debug("Deleted old screen capture file {file}.", file);
+							}
+							catch (IOException e)
+							{
+								// Should handle IOException
+								Log.Warning(e, "IOException during deleting old screen capture file {file}.", file);
+							}
 						}
 					}
 				}
